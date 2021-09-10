@@ -18,7 +18,7 @@ class PubSubService implements IPubSubService {
 
     /**
      * Toggles the Persistent Debug Mode for PubSub.
-     * Intentionally not on the interface as not all PubSub implementers need ths
+     * Intentionally not on the interface as not all PubSub implementers need this
      */
     public toggleDebugMode() {
         var localStorage = window.localStorage;
