@@ -1,3 +1,5 @@
+// SYEH - 08/05/2020 - Tiny-PubSub - Adapted from https://github.com/LukeWood/tiny-pubsub
+
 interface IPubSubService {
     subscribe<T>(event: string, callback: (data: T) => void): void;
     unsubscribe<T>(event: string, callback: (data: T) => void): void;
@@ -6,12 +8,23 @@ interface IPubSubService {
 }
 
 class PubSubService implements IPubSubService {
-    private readonly isDebugMode: boolean;
+    private isDebugMode: boolean;
     private readonly subscriptions: { [index: string]: { (data?: any): void }[] };
 
-    constructor(isDebugMode: boolean = false) {
-        this.isDebugMode = isDebugMode;
+    constructor() {
+        this.isDebugMode = window.localStorage.getItem('pubSubLogs') === 'true';
         this.subscriptions = {};
+    }
+
+    /**
+     * Toggles the Persistent Debug Mode for PubSub.
+     * Intentionally not on the interface as not all PubSub implementers need ths
+     */
+    public toggleDebugMode() {
+        var localStorage = window.localStorage;
+        var enabled = localStorage.getItem('pubSubLogs') === 'true';
+        localStorage.setItem('pubSubLogs', (!enabled).toString());
+        this.isDebugMode = !enabled;
     }
 
     public subscribe<T>(event: string, callback: (data: T) => void): void {
@@ -38,7 +51,6 @@ class PubSubService implements IPubSubService {
      * @param data - Optional data being sent over the wire
     */
     public publish<T>(event: string, data: T = null): void {
-
         if (this.isDebugMode) {
             if (data) {
                 console.trace(event, data);
@@ -50,7 +62,12 @@ class PubSubService implements IPubSubService {
         const subscriberCallbacks = this.subscriptions[event] || [];
 
         for (let i = 0; i < subscriberCallbacks.length; i++) {
-            subscriberCallbacks[i](data);
+            // prevent subscriber error from bringing down pubsub
+            try {
+                subscriberCallbacks[i](data);
+            } catch (err) {
+                console.error(err);
+            }
         }
     } 
 }
